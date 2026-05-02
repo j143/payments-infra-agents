@@ -8,6 +8,8 @@ import { ApplicationError, ErrorCode, JobQueueItem } from "../types";
 import { jobQueueRepository } from "../db/repositories/job-queue.repository";
 import { transactionRepository } from "../db/repositories/transaction.repository";
 import { partnerApiAdapter } from "./partner-api.adapter";
+import { logger } from "../api/middleware/logger";
+import { buildSettlementOutcome } from "./settlement.service";
 
 const PARTNER_NAME = process.env.PARTNER_NAME || "mock-partner";
 const PARTNER_ENDPOINT = process.env.PARTNER_API_ENDPOINT || "/payments";
@@ -66,7 +68,7 @@ export const jobQueueService = {
     await transactionRepository.updateStatus(transaction.id, "processing");
 
     try {
-      await partnerApiAdapter.call({
+      const partnerResponse = await partnerApiAdapter.call({
         transactionId: transaction.id,
         partnerName: PARTNER_NAME,
         endpoint: PARTNER_ENDPOINT,
@@ -81,12 +83,34 @@ export const jobQueueService = {
       });
 
       await transactionRepository.updateStatus(transaction.id, "completed");
+
+      const settlementOutcome = buildSettlementOutcome(transaction, {
+        partnerName: PARTNER_NAME,
+        partnerEndpoint: PARTNER_ENDPOINT,
+        partnerResponse,
+        transactionStatus: "completed",
+      });
+
+      logger.debug("Settlement outcome mapped", {
+        settlementOutcome,
+      });
     } catch (error) {
       const failureReason =
         error instanceof Error ? error.message : "unknown error";
 
       await transactionRepository.updateStatus(transaction.id, "failed", {
         failure_reason: failureReason,
+      });
+
+      const settlementOutcome = buildSettlementOutcome(transaction, {
+        partnerName: PARTNER_NAME,
+        partnerEndpoint: PARTNER_ENDPOINT,
+        transactionStatus: "failed",
+        failureReason,
+      });
+
+      logger.debug("Settlement outcome mapped", {
+        settlementOutcome,
       });
 
       throw error;

@@ -400,6 +400,48 @@ export const PaymentIntentSchema = z.object({
 });
 export type PaymentIntent = z.infer<typeof PaymentIntentSchema>;
 
+export const SettlementLifecycleStageSchema = z.enum([
+  "initiated",
+  "submitted",
+  "settled",
+  "failed",
+]);
+export type SettlementLifecycleStage = z.infer<
+  typeof SettlementLifecycleStageSchema
+>;
+
+export const SettlementOutcomeSchema = z.object({
+  id: z.string().uuid(),
+  transaction_id: z.string().uuid(),
+  transaction_status: TransactionStatusSchema,
+  lifecycle_stage: SettlementLifecycleStageSchema,
+  partner_name: z.string().min(1),
+  partner_endpoint: z.string().min(1),
+  partner_response_status_code: z.number().int().nullable(),
+  partner_response_payload: z.record(z.any()).nullable(),
+  settlement_reference_id: z.string().nullable(),
+  failure_reason: z.string().nullable(),
+  occurred_at: z.date(),
+  created_at: z.date(),
+  updated_at: z.date(),
+});
+export type SettlementOutcome = z.infer<typeof SettlementOutcomeSchema>;
+
+export const CreateSettlementOutcomeRequestSchema = z.object({
+  transaction_id: z.string().uuid(),
+  transaction_status: TransactionStatusSchema,
+  partner_name: z.string().min(1),
+  partner_endpoint: z.string().min(1),
+  partner_response_status_code: z.number().int().optional().nullable(),
+  partner_response_payload: z.record(z.any()).optional().nullable(),
+  settlement_reference_id: z.string().optional().nullable(),
+  failure_reason: z.string().optional().nullable(),
+  occurred_at: z.date().optional(),
+});
+export type CreateSettlementOutcomeRequest = z.infer<
+  typeof CreateSettlementOutcomeRequestSchema
+>;
+
 export const CreatePaymentIntentRequestSchema = z.object({
   idempotency_key: z.string().min(1),
   correlation_id: z.string().min(1),

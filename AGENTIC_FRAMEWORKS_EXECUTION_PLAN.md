@@ -14,7 +14,8 @@ Build a dual-layer architecture where:
 - Completed: Issue #5 (idempotency and correlation handling)
 - Completed: Issue #6 (delegation policy decision service)
 - Completed: Issue #7 (policy gate in transaction creation and queueing path)
-- Next up: Issue #8 (settlement outcome model and lifecycle mapping)
+- Completed: Issue #8 (settlement outcome model and lifecycle mapping)
+- Next up: Issue #9 (end-to-end tests for allow, deny, and replay scenarios)
 
 ## Current Baseline (Already Implemented)
 - Transaction intake, approval flow, and async worker execution.
