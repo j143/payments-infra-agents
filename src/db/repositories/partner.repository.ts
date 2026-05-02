@@ -130,137 +130,23 @@ export const partnerRepository = {
 
   async update(partnerId: string, request: UpdatePartnerRequest): Promise<Partner> {
     try {
-      // Build dynamic update query
-      const updates: string[] = [];
-      const params: unknown[] = [];
-
-      if (request.name !== undefined) {
-        updates.push("name = ?");
-        params.push(request.name);
-      }
-      if (request.status !== undefined) {
-        updates.push("status = ?");
-        params.push(request.status);
-      }
-      if (request.api_base_url !== undefined) {
-        updates.push("api_base_url = ?");
-        params.push(request.api_base_url);
-      }
-      if (request.api_key !== undefined) {
-        updates.push("api_key = ?");
-        params.push(request.api_key);
-      }
-      if (request.api_secret !== undefined) {
-        updates.push("api_secret = ?");
-        params.push(request.api_secret);
-      }
-      if (request.api_version !== undefined) {
-        updates.push("api_version = ?");
-        params.push(request.api_version);
-      }
-      if (request.primary_contact_name !== undefined) {
-        updates.push("primary_contact_name = ?");
-        params.push(request.primary_contact_name);
-      }
-      if (request.primary_contact_email !== undefined) {
-        updates.push("primary_contact_email = ?");
-        params.push(request.primary_contact_email);
-      }
-      if (request.primary_contact_phone !== undefined) {
-        updates.push("primary_contact_phone = ?");
-        params.push(request.primary_contact_phone);
-      }
-      if (request.rate_limit_per_minute !== undefined) {
-        updates.push("rate_limit_per_minute = ?");
-        params.push(request.rate_limit_per_minute);
-      }
-      if (request.webhook_signing_key !== undefined) {
-        updates.push("webhook_signing_key = ?");
-        params.push(request.webhook_signing_key);
-      }
-      if (request.status_page_url !== undefined) {
-        updates.push("status_page_url = ?");
-        params.push(request.status_page_url);
-      }
-      if (request.notes !== undefined) {
-        updates.push("notes = ?");
-        params.push(request.notes);
-      }
-      if (request.internal_owner_user_id !== undefined) {
-        updates.push("internal_owner_user_id = ?");
-        params.push(request.internal_owner_user_id);
-      }
-
-      updates.push("updated_at = NOW()");
-
-      if (updates.length === 1) {
-        // Only updated_at was modified, still need to return
-        const result = await sql`
-          UPDATE partners
-          SET updated_at = NOW()
-          WHERE id = ${partnerId}
-          RETURNING *
-        `;
-        if (!result[0]) {
-          throw new ApplicationError(
-            ErrorCode.PARTNER_NOT_FOUND,
-            `Partner ${partnerId} not found`,
-            404
-          );
-        }
-        return this.rowToPartner(result[0]);
-      }
-
-      // Use template literal with actual values since postgres npm client handles binding
       const result = await sql`
         UPDATE partners
         SET
-          name = ${request.name !== undefined ? request.name : sql`name`},
-          status = ${request.status !== undefined ? request.status : sql`status`},
-          api_base_url = ${request.api_base_url !== undefined ? request.api_base_url : sql`api_base_url`},
-          api_key = ${request.api_key !== undefined ? request.api_key : sql`api_key`},
-          api_secret = ${request.api_secret !== undefined ? request.api_secret : sql`api_secret`},
-          api_version = ${request.api_version !== undefined ? request.api_version : sql`api_version`},
-          primary_contact_name = ${
-            request.primary_contact_name !== undefined
-              ? request.primary_contact_name
-              : sql`primary_contact_name`
-          },
-          primary_contact_email = ${
-            request.primary_contact_email !== undefined
-              ? request.primary_contact_email
-              : sql`primary_contact_email`
-          },
-          primary_contact_phone = ${
-            request.primary_contact_phone !== undefined
-              ? request.primary_contact_phone
-              : sql`primary_contact_phone`
-          },
-          rate_limit_per_minute = ${
-            request.rate_limit_per_minute !== undefined
-              ? request.rate_limit_per_minute
-              : sql`rate_limit_per_minute`
-          },
-          webhook_signing_key = ${
-            request.webhook_signing_key !== undefined
-              ? request.webhook_signing_key
-              : sql`webhook_signing_key`
-          },
-          status_page_url = ${
-            request.status_page_url !== undefined
-              ? request.status_page_url
-              : sql`status_page_url`
-          },
-          notes = ${
-            request.notes !== undefined
-              ? request.notes
-              : sql`notes`
-          },
-          internal_owner_user_id = ${
-            request.internal_owner_user_id !== undefined
-              ? request.internal_owner_user_id
-              : sql`internal_owner_user_id`
-          },
+          name = CASE WHEN ${request.name !== undefined} THEN ${request.name ?? null} ELSE name END,
+          status = CASE WHEN ${request.status !== undefined} THEN ${request.status ?? null} ELSE status END,
+          api_base_url = CASE WHEN ${request.api_base_url !== undefined} THEN ${request.api_base_url ?? null} ELSE api_base_url END,
+          api_key = CASE WHEN ${request.api_key !== undefined} THEN ${request.api_key ?? null} ELSE api_key END,
+          api_secret = CASE WHEN ${request.api_secret !== undefined} THEN ${request.api_secret ?? null} ELSE api_secret END,
+          api_version = CASE WHEN ${request.api_version !== undefined} THEN ${request.api_version ?? null} ELSE api_version END,
+          primary_contact_name = CASE WHEN ${request.primary_contact_name !== undefined} THEN ${request.primary_contact_name ?? null} ELSE primary_contact_name END,
+          primary_contact_email = CASE WHEN ${request.primary_contact_email !== undefined} THEN ${request.primary_contact_email ?? null} ELSE primary_contact_email END,
+          primary_contact_phone = CASE WHEN ${request.primary_contact_phone !== undefined} THEN ${request.primary_contact_phone ?? null} ELSE primary_contact_phone END,
+          rate_limit_per_minute = CASE WHEN ${request.rate_limit_per_minute !== undefined} THEN ${request.rate_limit_per_minute ?? null} ELSE rate_limit_per_minute END,
+          webhook_signing_key = CASE WHEN ${request.webhook_signing_key !== undefined} THEN ${request.webhook_signing_key ?? null} ELSE webhook_signing_key END,
+          status_page_url = CASE WHEN ${request.status_page_url !== undefined} THEN ${request.status_page_url ?? null} ELSE status_page_url END,
+          notes = CASE WHEN ${request.notes !== undefined} THEN ${request.notes ?? null} ELSE notes END,
+          internal_owner_user_id = CASE WHEN ${request.internal_owner_user_id !== undefined} THEN ${request.internal_owner_user_id ?? null} ELSE internal_owner_user_id END,
           updated_at = NOW()
         WHERE id = ${partnerId}
         RETURNING *
@@ -295,7 +181,7 @@ export const partnerRepository = {
         UPDATE partners
         SET
           last_health_check_at = NOW(),
-          last_successful_transaction_at = ${lastSuccessfulTime || sql`last_successful_transaction_at`},
+          last_successful_transaction_at = CASE WHEN ${lastSuccessfulTime !== undefined} THEN ${lastSuccessfulTime ?? null} ELSE last_successful_transaction_at END,
           consecutive_failures = CASE WHEN ${success} THEN 0 ELSE consecutive_failures + 1 END,
           updated_at = NOW()
         WHERE id = ${partnerId}
