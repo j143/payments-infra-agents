@@ -18,6 +18,7 @@ async function runMigrations() {
     const migrations = [
       await import("./001_initial_schema.ts"),
       await import("./002_job_queue.ts"),
+      await import("./003_partners.ts"),
     ];
 
     for (const migration of migrations) {

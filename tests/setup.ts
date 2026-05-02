@@ -25,6 +25,7 @@ export async function clearDatabase() {
     await sql`DELETE FROM job_queue`;
     await sql`DELETE FROM transactions`;
     await sql`DELETE FROM accounts`;
+    await sql`DELETE FROM partners`;
   } catch (error) {
     console.error("Failed to clear database:", error);
     throw error;

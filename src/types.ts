@@ -199,6 +199,93 @@ export const AccountSchema = z.object({
 export type Account = z.infer<typeof AccountSchema>;
 
 // ============================================
+// Partner Domain (Door-Knocker Integration)
+// ============================================
+
+export const PartnerStatusSchema = z.enum([
+  "discovery",      // Initial contact phase
+  "negotiation",    // Discussing terms
+  "onboarding",     // Waiting for API credentials
+  "testing",        // Sandbox integration
+  "live",           // Production active
+  "suspended",      // Temporarily inactive
+  "offboarded",     // Permanently removed
+]);
+export type PartnerStatus = z.infer<typeof PartnerStatusSchema>;
+
+export const PartnerSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  entity_type: z.enum(["bank", "payment_network", "clearing", "settlement"]),
+  status: PartnerStatusSchema,
+  
+  // API Integration Details
+  api_base_url: z.string().url(),
+  api_key: z.string().min(1),           // Encrypted in database
+  api_secret: z.string().min(1).nullable(),  // Encrypted if present
+  api_version: z.string().default("v1"),
+  
+  // Contact Information
+  primary_contact_name: z.string().max(255).nullable(),
+  primary_contact_email: z.string().email().nullable(),
+  primary_contact_phone: z.string().max(20).nullable(),
+  
+  // Integration Details
+  rate_limit_per_minute: z.number().int().positive().default(1000),
+  webhook_signing_key: z.string().nullable(),
+  
+  // Health & Monitoring
+  last_health_check_at: z.date().nullable(),
+  last_successful_transaction_at: z.date().nullable(),
+  consecutive_failures: z.number().int().nonnegative().default(0),
+  status_page_url: z.string().url().nullable(),
+  
+  // Metadata
+  notes: z.string().nullable(),
+  internal_owner_user_id: z.string().uuid().nullable(),  // Who "owns" this partnership
+  created_at: z.date(),
+  updated_at: z.date(),
+});
+export type Partner = z.infer<typeof PartnerSchema>;
+
+export const CreatePartnerRequestSchema = z.object({
+  name: z.string().min(1).max(255),
+  entity_type: z.enum(["bank", "payment_network", "clearing", "settlement"]),
+  status: PartnerStatusSchema.default("discovery"),
+  api_base_url: z.string().url(),
+  api_key: z.string().min(1),
+  api_secret: z.string().min(1).optional(),
+  api_version: z.string().default("v1"),
+  primary_contact_name: z.string().max(255).optional(),
+  primary_contact_email: z.string().email().optional(),
+  primary_contact_phone: z.string().max(20).optional(),
+  rate_limit_per_minute: z.number().int().positive().default(1000),
+  webhook_signing_key: z.string().optional(),
+  status_page_url: z.string().url().optional(),
+  notes: z.string().optional(),
+  internal_owner_user_id: z.string().uuid().optional(),
+});
+export type CreatePartnerRequest = z.infer<typeof CreatePartnerRequestSchema>;
+
+export const UpdatePartnerRequestSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  status: PartnerStatusSchema.optional(),
+  api_base_url: z.string().url().optional(),
+  api_key: z.string().min(1).optional(),
+  api_secret: z.string().min(1).optional().nullable(),
+  api_version: z.string().optional(),
+  primary_contact_name: z.string().max(255).optional().nullable(),
+  primary_contact_email: z.string().email().optional().nullable(),
+  primary_contact_phone: z.string().max(20).optional().nullable(),
+  rate_limit_per_minute: z.number().int().positive().optional(),
+  webhook_signing_key: z.string().optional().nullable(),
+  status_page_url: z.string().url().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  internal_owner_user_id: z.string().uuid().optional().nullable(),
+});
+export type UpdatePartnerRequest = z.infer<typeof UpdatePartnerRequestSchema>;
+
+// ============================================
 // Error Domain
 // ============================================
 
@@ -214,6 +301,12 @@ export enum ErrorCode {
 
   // Verification errors
   VERIFICATION_TASK_NOT_FOUND = "VERIFICATION_TASK_NOT_FOUND",
+
+  // Partner errors
+  PARTNER_NOT_FOUND = "PARTNER_NOT_FOUND",
+  PARTNER_ALREADY_EXISTS = "PARTNER_ALREADY_EXISTS",
+  PARTNER_INACTIVE = "PARTNER_INACTIVE",
+  PARTNER_HEALTH_CHECK_FAILED = "PARTNER_HEALTH_CHECK_FAILED",
 
   // Partner API errors
   PARTNER_API_ERROR = "PARTNER_API_ERROR",
