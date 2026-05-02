@@ -11,12 +11,26 @@ import { circuitBreakerRoutes } from "./routes/circuit-breaker";
 import { verificationTaskRoutes } from "./routes/verification-tasks";
 import { partnerRoutes } from "./routes/partners";
 import { auditTrailRoutes } from "./routes/audit-trail";
+import { stripeWebhookRoutes } from "./routes/webhooks/stripe";
 import { errorHandler } from "./middleware/error-handler";
 import { requestLogger } from "./middleware/request-logger";
 
 const app: Application = express();
 
 // Middleware
+// Use json for most routes, but we need raw body for Stripe webhooks.
+app.use((req, res, next) => {
+  // capture raw body for webhook verification
+  let data = Buffer.from([]);
+  req.on("data", (chunk: Buffer) => {
+    data = Buffer.concat([data, chunk]);
+  });
+  req.on("end", () => {
+    // attach rawBody if content-type is json (Stripe signs the raw payload)
+    (req as any).rawBody = data.length ? data.toString() : undefined;
+    next();
+  });
+});
 app.use(express.json());
 app.use(requestLogger);
 
@@ -32,6 +46,8 @@ app.use("/api", circuitBreakerRoutes);
 app.use("/api", verificationTaskRoutes);
 app.use("/api/partners", partnerRoutes);
 app.use("/api/audit-trail", auditTrailRoutes);
+// Webhooks: mount Stripe webhook receiver at a dedicated path
+app.use("/api/webhooks/stripe", stripeWebhookRoutes);
 
 // Error handling (must be last)
 app.use(errorHandler);
