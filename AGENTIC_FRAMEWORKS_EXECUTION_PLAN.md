@@ -11,7 +11,9 @@ Build a dual-layer architecture where:
 - Completed: Issue #2 (canonical domain types)
 - Completed: Issue #3 (delegation migrations and repositories)
 - Completed: Issue #4 (A2A adapter API route)
-- Next up: Issue #5 (idempotency and correlation handling)
+- Completed: Issue #5 (idempotency and correlation handling)
+- Completed: Issue #6 (delegation policy decision service)
+- Next up: Issue #7 (policy gate in transaction creation and queueing path)
 
 ## Current Baseline (Already Implemented)
 - Transaction intake, approval flow, and async worker execution.
