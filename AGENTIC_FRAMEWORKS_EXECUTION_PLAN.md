@@ -7,8 +7,10 @@ Build a dual-layer architecture where:
 - Existing payment orchestration continues to execute money movement reliably.
 
 ## Execution Status
-- In progress: Issue #1 (ADR boundary definition)
-- Next up: Issue #2 (canonical domain types)
+- Completed: Issue #1 (ADR boundary definition)
+- Completed: Issue #2 (canonical domain types)
+- Completed: Issue #3 (delegation migrations and repositories)
+- Next up: Issue #4 (A2A adapter API route)
 
 ## Current Baseline (Already Implemented)
 - Transaction intake, approval flow, and async worker execution.

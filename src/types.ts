@@ -286,6 +286,147 @@ export const UpdatePartnerRequestSchema = z.object({
 export type UpdatePartnerRequest = z.infer<typeof UpdatePartnerRequestSchema>;
 
 // ============================================
+// Agentic Payment Domain (A2A + AMP Bridge)
+// ============================================
+
+export const AgentPrincipalTypeSchema = z.enum([
+  "human",
+  "app_agent",
+  "merchant_agent",
+  "service_agent",
+]);
+export type AgentPrincipalType = z.infer<typeof AgentPrincipalTypeSchema>;
+
+export const AgentPrincipalSchema = z.object({
+  principal_id: z.string().min(1),
+  principal_type: AgentPrincipalTypeSchema,
+  wallet_id: z.string().optional(),
+  organization_id: z.string().optional(),
+  metadata: z.record(z.any()).default({}),
+});
+export type AgentPrincipal = z.infer<typeof AgentPrincipalSchema>;
+
+export const DelegationStatusSchema = z.enum([
+  "active",
+  "revoked",
+  "expired",
+]);
+export type DelegationStatus = z.infer<typeof DelegationStatusSchema>;
+
+export const DelegationGrantSchema = z.object({
+  id: z.string().uuid(),
+  grantor_principal_id: z.string().min(1),
+  grantee_principal_id: z.string().min(1),
+  max_amount_cents: z.number().int().positive(),
+  currency: z.string().length(3),
+  allowed_merchant_ids: z.array(z.string().uuid()).default([]),
+  allowed_categories: z.array(z.string().min(1)).default([]),
+  valid_from: z.date(),
+  valid_until: z.date(),
+  status: DelegationStatusSchema,
+  policy_version: z.string().default("v1"),
+  revoked_at: z.date().nullable(),
+  revocation_reason: z.string().nullable(),
+  metadata: z.record(z.any()).default({}),
+  created_at: z.date(),
+  updated_at: z.date(),
+});
+export type DelegationGrant = z.infer<typeof DelegationGrantSchema>;
+
+export const CreateDelegationGrantRequestSchema = z.object({
+  grantor_principal_id: z.string().min(1),
+  grantee_principal_id: z.string().min(1),
+  max_amount_cents: z.number().int().positive(),
+  currency: z.string().length(3),
+  allowed_merchant_ids: z.array(z.string().uuid()).default([]),
+  allowed_categories: z.array(z.string().min(1)).default([]),
+  valid_from: z.date(),
+  valid_until: z.date(),
+  policy_version: z.string().default("v1"),
+  metadata: z.record(z.any()).default({}),
+});
+export type CreateDelegationGrantRequest = z.infer<
+  typeof CreateDelegationGrantRequestSchema
+>;
+
+export const DelegationRevocationSchema = z.object({
+  id: z.string().uuid(),
+  delegation_grant_id: z.string().uuid(),
+  revoked_by_principal_id: z.string().min(1),
+  reason: z.string().nullable(),
+  metadata: z.record(z.any()).default({}),
+  created_at: z.date(),
+});
+export type DelegationRevocation = z.infer<typeof DelegationRevocationSchema>;
+
+export const CreateDelegationRevocationRequestSchema = z.object({
+  delegation_grant_id: z.string().uuid(),
+  revoked_by_principal_id: z.string().min(1),
+  reason: z.string().optional(),
+  metadata: z.record(z.any()).default({}),
+});
+export type CreateDelegationRevocationRequest = z.infer<
+  typeof CreateDelegationRevocationRequestSchema
+>;
+
+export const PaymentIntentStatusSchema = z.enum([
+  "received",
+  "authorized",
+  "denied",
+  "queued",
+  "processing",
+  "settled",
+  "failed",
+]);
+export type PaymentIntentStatus = z.infer<typeof PaymentIntentStatusSchema>;
+
+export const PaymentIntentSchema = z.object({
+  id: z.string().uuid(),
+  idempotency_key: z.string().min(1),
+  correlation_id: z.string().min(1),
+  principal: AgentPrincipalSchema,
+  delegation_grant_id: z.string().uuid().nullable(),
+  reference_id: z.string().min(1),
+  account_id: z.string().uuid(),
+  merchant_id: z.string().uuid(),
+  amount_cents: z.number().int().positive(),
+  currency: z.string().length(3),
+  category: z.string().min(1).optional(),
+  status: PaymentIntentStatusSchema,
+  denial_reason_code: z.string().nullable(),
+  metadata: z.record(z.any()).default({}),
+  created_at: z.date(),
+  updated_at: z.date(),
+});
+export type PaymentIntent = z.infer<typeof PaymentIntentSchema>;
+
+export const CreatePaymentIntentRequestSchema = z.object({
+  idempotency_key: z.string().min(1),
+  correlation_id: z.string().min(1),
+  principal: AgentPrincipalSchema,
+  delegation_grant_id: z.string().uuid().optional(),
+  reference_id: z.string().min(1),
+  account_id: z.string().uuid(),
+  merchant_id: z.string().uuid(),
+  amount_cents: z.number().int().positive(),
+  currency: z.string().length(3),
+  category: z.string().min(1).optional(),
+  metadata: z.record(z.any()).default({}),
+});
+export type CreatePaymentIntentRequest = z.infer<
+  typeof CreatePaymentIntentRequestSchema
+>;
+
+export const PolicyDecisionSchema = z.object({
+  allowed: z.boolean(),
+  reason_code: z.string().min(1),
+  delegation_grant_id: z.string().uuid().nullable(),
+  evaluated_at: z.date(),
+  evidence: z.record(z.any()).default({}),
+});
+export type PolicyDecision = z.infer<typeof PolicyDecisionSchema>;
+
+// ============================================
 // Error Domain
 // ============================================
 
