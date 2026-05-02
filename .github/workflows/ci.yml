@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: payments_infra
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U user -d payments_infra"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://user:password@localhost:5432/payments_infra
+      PARTNER_API_MODE: mock
+      PARTNER_API_MOCK_URL: http://localhost:8080
+      JOB_POLL_INTERVAL_MS: 100
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run migrations
+        run: npm run migrate
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
