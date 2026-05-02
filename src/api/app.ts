@@ -6,6 +6,7 @@
 
 import express, { Application } from "express";
 import { transactionRoutes } from "./routes/transactions";
+import { paymentIntentRoutes } from "./routes/payment-intents";
 import { circuitBreakerRoutes } from "./routes/circuit-breaker";
 import { verificationTaskRoutes } from "./routes/verification-tasks";
 import { partnerRoutes } from "./routes/partners";
@@ -25,6 +26,7 @@ app.get("/health", (req, res) => {
 
 // Routes
 app.use("/api", transactionRoutes);
+app.use("/api/payment-intents", paymentIntentRoutes);
 app.use("/api", circuitBreakerRoutes);
 app.use("/api", verificationTaskRoutes);
 app.use("/api/partners", partnerRoutes);

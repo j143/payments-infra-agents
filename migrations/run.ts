@@ -20,6 +20,7 @@ async function runMigrations() {
       await import("./002_job_queue.ts"),
       await import("./003_partners.ts"),
       await import("./004_delegation_grants.ts"),
+      await import("./005_payment_intents.ts"),
     ];
 
     for (const migration of migrations) {

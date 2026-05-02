@@ -10,7 +10,8 @@ Build a dual-layer architecture where:
 - Completed: Issue #1 (ADR boundary definition)
 - Completed: Issue #2 (canonical domain types)
 - Completed: Issue #3 (delegation migrations and repositories)
-- Next up: Issue #4 (A2A adapter API route)
+- Completed: Issue #4 (A2A adapter API route)
+- Next up: Issue #5 (idempotency and correlation handling)
 
 ## Current Baseline (Already Implemented)
 - Transaction intake, approval flow, and async worker execution.

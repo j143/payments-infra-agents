@@ -21,6 +21,7 @@ export async function clearDatabase() {
     // Order matters: delete child tables first
     await sql`DELETE FROM delegation_revocations`;
     await sql`DELETE FROM delegation_grants`;
+    await sql`DELETE FROM payment_intents`;
     await sql`DELETE FROM circuit_breaker_events`;
     await sql`DELETE FROM verification_tasks`;
     await sql`DELETE FROM shadow_logs`;
