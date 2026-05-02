@@ -214,7 +214,10 @@ export const transactionRepository = {
       reference_id: row.reference_id,
       account_id: row.account_id,
       merchant_id: row.merchant_id,
-      amount_cents: row.amount_cents,
+      amount_cents:
+        typeof row.amount_cents === "string"
+          ? Number(row.amount_cents)
+          : row.amount_cents,
       currency: row.currency,
       status: row.status,
       requires_approval: row.requires_approval,

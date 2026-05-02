@@ -16,8 +16,8 @@ async function runMigrations() {
 
     // Import and run schemas in order
     const migrations = [
-      await import("./001_initial_schema.js"),
-      await import("./002_job_queue.js"),
+      await import("./001_initial_schema.ts"),
+      await import("./002_job_queue.ts"),
     ];
 
     for (const migration of migrations) {

@@ -4,14 +4,20 @@
  * Helpers for writing tests in this codebase.
  */
 
+import "dotenv/config";
 import { beforeEach, afterEach } from "vitest";
-import { sql } from "../src/db/connection";
+
+async function getSql() {
+  const { sql } = await import("../src/db/connection");
+  return sql;
+}
 
 /**
  * Clear all test data before each test
  */
 export async function clearDatabase() {
   try {
+    const sql = await getSql();
     // Order matters: delete child tables first
     await sql`DELETE FROM circuit_breaker_events`;
     await sql`DELETE FROM verification_tasks`;
@@ -43,6 +49,7 @@ export function setupTestDatabase() {
 export async function createTestAccount(
   merchantId: string = "00000000-0000-0000-0000-000000000001"
 ) {
+  const sql = await getSql();
   const result = await sql`
     INSERT INTO accounts (merchant_id, account_type, balance_cents)
     VALUES (${merchantId}, 'business', 1000000)
@@ -55,6 +62,7 @@ export async function createTestAccount(
  * Create test transaction
  */
 export async function createTestTransaction(overrides: Record<string, unknown> = {}) {
+  const sql = await getSql();
   const result = await sql`
     INSERT INTO transactions (
       reference_id,

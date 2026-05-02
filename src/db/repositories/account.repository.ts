@@ -206,7 +206,10 @@ export const accountRepository = {
       id: row.id,
       merchant_id: row.merchant_id,
       account_type: row.account_type,
-      balance_cents: row.balance_cents,
+      balance_cents:
+        typeof row.balance_cents === "string"
+          ? Number(row.balance_cents)
+          : row.balance_cents,
       created_at: new Date(row.created_at),
       updated_at: new Date(row.updated_at),
     };
