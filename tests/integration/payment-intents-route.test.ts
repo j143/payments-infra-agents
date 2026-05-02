@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const createTransactionMock = vi.hoisted(() => vi.fn());
+const policyDecisionMock = vi.hoisted(() => vi.fn());
 const paymentIntentState = vi.hoisted(() => {
   const store = new Map<string, any>();
 
@@ -92,6 +93,12 @@ vi.mock("../../src/services/transaction.service", () => ({
   },
 }));
 
+vi.mock("../../src/services/delegation-policy.service", () => ({
+  delegationPolicyService: {
+    decideDelegationPolicy: policyDecisionMock,
+  },
+}));
+
 vi.mock("../../src/db/repositories/payment-intent.repository", () => ({
   paymentIntentRepository: paymentIntentState,
 }));
@@ -119,6 +126,13 @@ describe("payment-intents route", () => {
     };
 
     createTransactionMock.mockResolvedValue(mockTransaction);
+    policyDecisionMock.mockResolvedValue({
+      allowed: true,
+      reason_code: "delegation_grant_allowed",
+      delegation_grant_id: "00000000-0000-0000-0000-000000000123",
+      evaluated_at: new Date("2026-05-02T10:00:00Z"),
+      evidence: {},
+    });
     paymentIntentState.store.clear();
 
     const appModule = await import("../../src/api/app");
@@ -145,6 +159,7 @@ describe("payment-intents route", () => {
 
   beforeEach(() => {
     createTransactionMock.mockClear();
+    policyDecisionMock.mockClear();
     paymentIntentState.store.clear();
   });
 
@@ -170,6 +185,7 @@ describe("payment-intents route", () => {
           principal_id: "agent-http-1",
           principal_type: "app_agent",
         },
+        delegation_grant_id: "00000000-0000-0000-0000-000000000123",
         reference_id: "ORDER-HTTP-001",
         account_id: "00000000-0000-0000-0000-000000000001",
         merchant_id: "00000000-0000-0000-0000-000000000002",
@@ -210,6 +226,7 @@ describe("payment-intents route", () => {
         principal_id: "agent-http-2",
         principal_type: "app_agent",
       },
+      delegation_grant_id: "00000000-0000-0000-0000-000000000123",
       reference_id: "ORDER-HTTP-002",
       account_id: "00000000-0000-0000-0000-000000000001",
       merchant_id: "00000000-0000-0000-0000-000000000002",
@@ -259,6 +276,7 @@ describe("payment-intents route", () => {
           principal_id: "agent-http-3",
           principal_type: "app_agent",
         },
+        delegation_grant_id: "00000000-0000-0000-0000-000000000123",
         reference_id: "ORDER-HTTP-003",
         account_id: "00000000-0000-0000-0000-000000000001",
         merchant_id: "00000000-0000-0000-0000-000000000002",
@@ -282,6 +300,7 @@ describe("payment-intents route", () => {
           principal_id: "agent-http-3",
           principal_type: "app_agent",
         },
+        delegation_grant_id: "00000000-0000-0000-0000-000000000123",
         reference_id: "ORDER-HTTP-999",
         account_id: "00000000-0000-0000-0000-000000000001",
         merchant_id: "00000000-0000-0000-0000-000000000002",
@@ -300,6 +319,51 @@ describe("payment-intents route", () => {
 
     expect(conflictPayload.success).toBe(false);
     expect(conflictPayload.error.code).toBe("IDEMPOTENCY_CONFLICT");
+  });
+
+  it("denies payment intents that fail delegation policy", async () => {
+    policyDecisionMock.mockResolvedValueOnce({
+      allowed: false,
+      reason_code: "delegation_grant_required",
+      delegation_grant_id: null,
+      evaluated_at: new Date("2026-05-02T10:00:00Z"),
+      evidence: {},
+    });
+
+    const response = await fetch(`${baseUrl}/api/payment-intents`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        idempotency_key: "idem-http-4",
+        correlation_id: "corr-http-4",
+        principal: {
+          principal_id: "agent-http-4",
+          principal_type: "app_agent",
+        },
+        reference_id: "ORDER-HTTP-004",
+        account_id: "00000000-0000-0000-0000-000000000001",
+        merchant_id: "00000000-0000-0000-0000-000000000002",
+        amount_cents: 2500,
+        currency: "SGD",
+        metadata: { source: "test" },
+      }),
+    });
+
+    expect(response.status).toBe(403);
+
+    const payload = (await response.json()) as {
+      success: boolean;
+      error: { code: string; details?: { policy_decision?: { reason_code: string } } };
+    };
+
+    expect(payload.success).toBe(false);
+    expect(payload.error.code).toBe("DELEGATION_POLICY_DENIED");
+    expect(payload.error.details?.policy_decision?.reason_code).toBe(
+      "delegation_grant_required"
+    );
+    expect(createTransactionMock).not.toHaveBeenCalled();
   });
 
   it("rejects invalid payment intent payloads", async () => {

@@ -13,7 +13,8 @@ Build a dual-layer architecture where:
 - Completed: Issue #4 (A2A adapter API route)
 - Completed: Issue #5 (idempotency and correlation handling)
 - Completed: Issue #6 (delegation policy decision service)
-- Next up: Issue #7 (policy gate in transaction creation and queueing path)
+- Completed: Issue #7 (policy gate in transaction creation and queueing path)
+- Next up: Issue #8 (settlement outcome model and lifecycle mapping)
 
 ## Current Baseline (Already Implemented)
 - Transaction intake, approval flow, and async worker execution.

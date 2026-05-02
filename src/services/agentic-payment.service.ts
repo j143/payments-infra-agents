@@ -16,6 +16,7 @@ import {
   Transaction,
 } from "../types";
 import { paymentIntentRepository } from "../db/repositories/payment-intent.repository";
+import { delegationPolicyService } from "./delegation-policy.service";
 import { transactionService } from "./transaction.service";
 
 export interface AgentPaymentIntentResult {
@@ -139,6 +140,22 @@ export async function submitAgentPaymentIntent(
       };
     }
 
+    if (
+      existing.status === "failed" &&
+      existing.failure_reason?.startsWith("delegation_")
+    ) {
+      throw new ApplicationError(
+        ErrorCode.DELEGATION_POLICY_DENIED,
+        `Payment intent ${request.idempotency_key} was denied by delegation policy: ${existing.failure_reason}`,
+        403,
+        {
+          idempotency_key: request.idempotency_key,
+          correlation_id: existing.correlation_id,
+          policy_reason_code: existing.failure_reason,
+        }
+      );
+    }
+
     if (existing.status === "processing" || existing.status === "received") {
       throw new ApplicationError(
         ErrorCode.PAYMENT_INTENT_IN_PROGRESS,
@@ -169,6 +186,28 @@ export async function submitAgentPaymentIntent(
   await paymentIntentRepository.markProcessing(createdIntent.id);
 
   try {
+    const policyDecision = await delegationPolicyService.decideDelegationPolicy(
+      request
+    );
+
+    if (!policyDecision.allowed) {
+      await paymentIntentRepository.markFailed(
+        createdIntent.id,
+        policyDecision.reason_code
+      );
+
+      throw new ApplicationError(
+        ErrorCode.DELEGATION_POLICY_DENIED,
+        `Payment intent ${request.idempotency_key} was denied by delegation policy: ${policyDecision.reason_code}`,
+        403,
+        {
+          idempotency_key: request.idempotency_key,
+          correlation_id: request.correlation_id,
+          policy_decision: policyDecision,
+        }
+      );
+    }
+
     const transaction = await transactionService.createTransaction(
       mapPaymentIntentToTransactionRequest(request)
     );
@@ -184,6 +223,13 @@ export async function submitAgentPaymentIntent(
       transaction,
     };
   } catch (error) {
+    if (
+      error instanceof ApplicationError &&
+      error.code === ErrorCode.DELEGATION_POLICY_DENIED
+    ) {
+      throw error;
+    }
+
     const failureReason =
       error instanceof Error ? error.message : "unknown error";
     await paymentIntentRepository.markFailed(createdIntent.id, failureReason);
