@@ -22,6 +22,7 @@ export async function clearDatabase() {
     await sql`DELETE FROM circuit_breaker_events`;
     await sql`DELETE FROM verification_tasks`;
     await sql`DELETE FROM shadow_logs`;
+    await sql`DELETE FROM job_queue`;
     await sql`DELETE FROM transactions`;
     await sql`DELETE FROM accounts`;
   } catch (error) {

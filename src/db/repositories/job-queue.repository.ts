@@ -160,6 +160,41 @@ export const jobQueueRepository = {
     }
   },
 
+  async findAll(): Promise<JobQueueItem[]> {
+    try {
+      const results = await sql`
+        SELECT * FROM job_queue
+        ORDER BY created_at DESC
+      `;
+
+      return results.map((row) => this.rowToJob(row));
+    } catch (error) {
+      throw new ApplicationError(
+        ErrorCode.DATABASE_ERROR,
+        `Failed to fetch all job queue items: ${error instanceof Error ? error.message : "unknown error"}`,
+        500
+      );
+    }
+  },
+
+  async findById(jobId: string): Promise<JobQueueItem | null> {
+    try {
+      const results = await sql`
+        SELECT * FROM job_queue
+        WHERE id = ${jobId}
+        LIMIT 1
+      `;
+
+      return results[0] ? this.rowToJob(results[0]) : null;
+    } catch (error) {
+      throw new ApplicationError(
+        ErrorCode.DATABASE_ERROR,
+        `Failed to fetch job by id: ${error instanceof Error ? error.message : "unknown error"}`,
+        500
+      );
+    }
+  },
+
   rowToJob(row: any): JobQueueItem {
     return {
       id: row.id,
