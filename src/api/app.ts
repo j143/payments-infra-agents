@@ -10,6 +10,7 @@ import { paymentIntentRoutes } from "./routes/payment-intents";
 import { circuitBreakerRoutes } from "./routes/circuit-breaker";
 import { verificationTaskRoutes } from "./routes/verification-tasks";
 import { partnerRoutes } from "./routes/partners";
+import { auditTrailRoutes } from "./routes/audit-trail";
 import { errorHandler } from "./middleware/error-handler";
 import { requestLogger } from "./middleware/request-logger";
 
@@ -30,6 +31,7 @@ app.use("/api/payment-intents", paymentIntentRoutes);
 app.use("/api", circuitBreakerRoutes);
 app.use("/api", verificationTaskRoutes);
 app.use("/api/partners", partnerRoutes);
+app.use("/api/audit-trail", auditTrailRoutes);
 
 // Error handling (must be last)
 app.use(errorHandler);
