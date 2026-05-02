@@ -8,7 +8,7 @@
 import Stripe from "stripe";
 
 const apiKey = process.env.STRIPE_API_KEY || "";
-const stripe = apiKey ? new Stripe(apiKey, { apiVersion: "2024-11-08" }) : null;
+const stripe = apiKey ? new Stripe(apiKey, { apiVersion: "2022-11-15" }) : null;
 
 export async function createPaymentIntent(params: {
   amount_cents: number;

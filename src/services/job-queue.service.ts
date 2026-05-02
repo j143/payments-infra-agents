@@ -8,6 +8,7 @@ import { ApplicationError, ErrorCode, JobQueueItem } from "../types";
 import { jobQueueRepository } from "../db/repositories/job-queue.repository";
 import { transactionRepository } from "../db/repositories/transaction.repository";
 import { partnerApiAdapter } from "./partner-api.adapter";
+import { shadowLogRepository } from "../db/repositories/shadow-log.repository";
 import * as stripeAdapter from "./psp/stripe.adapter";
 import { logger } from "../api/middleware/logger";
 import { buildSettlementOutcome } from "./settlement.service";
@@ -111,7 +112,7 @@ export const jobQueueService = {
         const settlementOutcome = buildSettlementOutcome(transaction, {
           partnerName: "stripe",
           partnerEndpoint: "/v1/payment_intents",
-          partnerResponse: pi,
+          partnerResponse: { status: 200, payload: pi as unknown as Record<string, unknown> },
           transactionStatus: "completed",
         });
 

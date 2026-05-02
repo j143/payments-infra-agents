@@ -6,7 +6,7 @@
 
 import express, { Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
-import * as stripeAdapter from "../../services/psp/stripe.adapter";
+import * as stripeAdapter from "../../../services/psp/stripe.adapter";
 
 const router = express.Router();
 
@@ -29,7 +29,7 @@ router.post(
 
       try {
         const stripe = new Stripe(process.env.STRIPE_API_KEY || "", {
-          apiVersion: "2024-11-08",
+          apiVersion: "2022-11-15",
         });
         event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
       } catch (err) {
