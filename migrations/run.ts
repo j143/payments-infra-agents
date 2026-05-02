@@ -14,9 +14,15 @@ async function runMigrations() {
   try {
     console.log("🔄 Running migrations...");
 
-    // Import and run schema
-    const { schema } = await import("./001_initial_schema.js");
-    await sql.unsafe(schema);
+    // Import and run schemas in order
+    const migrations = [
+      await import("./001_initial_schema.js"),
+      await import("./002_job_queue.js"),
+    ];
+
+    for (const migration of migrations) {
+      await sql.unsafe(migration.schema);
+    }
 
     console.log("✅ Migrations completed successfully");
     process.exit(0);

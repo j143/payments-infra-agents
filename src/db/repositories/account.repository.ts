@@ -201,7 +201,7 @@ export const accountRepository = {
   /**
    * Helper to convert database row to Account type
    */
-  private rowToAccount(row: any): Account {
+  rowToAccount(row: any): Account {
     return {
       id: row.id,
       merchant_id: row.merchant_id,

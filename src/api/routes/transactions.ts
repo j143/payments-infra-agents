@@ -6,12 +6,12 @@
  */
 
 import { Router, Request, Response, NextFunction } from "express";
-import { transactionService } from "../services/transaction.service";
+import { transactionService } from "../../services/transaction.service";
 import {
   CreateTransactionRequestSchema,
   ApplicationError,
   ErrorCode,
-} from "../types";
+} from "../../types";
 
 const router = Router();
 
@@ -27,7 +27,7 @@ router.post(
       const transaction =
         await transactionService.createTransaction(validated);
 
-      res.status(201).json({
+      res.status(202).json({
         success: true,
         data: transaction,
       });

@@ -7,6 +7,7 @@
 
 import { transactionRepository } from "../db/repositories/transaction.repository";
 import { shadowLogRepository } from "../db/repositories/shadow-log.repository";
+import { jobQueueService } from "./job-queue.service";
 import { CreateTransactionRequest, Transaction, ApplicationError, ErrorCode } from "../types";
 
 const HUMAN_APPROVAL_THRESHOLD_CENTS =
@@ -23,22 +24,20 @@ export const transactionService = {
   async createTransaction(
     request: CreateTransactionRequest
   ): Promise<Transaction> {
-    // Create transaction
-    const transaction = await transactionRepository.create(request);
+    // Create transaction in queued state by default
+    const transaction = await transactionRepository.createWithStatus(
+      request,
+      request.amount_cents >= HUMAN_APPROVAL_THRESHOLD_CENTS
+        ? "requires_approval"
+        : "queued"
+    );
 
     // Check if requires human approval
     if (transaction.amount_cents >= HUMAN_APPROVAL_THRESHOLD_CENTS) {
-      await transactionRepository.markForApproval(transaction.id);
-      const updatedTx = await transactionRepository.findById(transaction.id);
-      if (!updatedTx) {
-        throw new ApplicationError(
-          ErrorCode.DATABASE_ERROR,
-          "Failed to mark transaction for approval",
-          500
-        );
-      }
-      return updatedTx;
+      return transaction;
     }
+
+    await jobQueueService.enqueueTransaction(transaction.id);
 
     return transaction;
   },
@@ -98,6 +97,8 @@ export const transactionService = {
         500
       );
     }
+
+    await jobQueueService.enqueueTransaction(transactionId);
 
     return updated;
   },

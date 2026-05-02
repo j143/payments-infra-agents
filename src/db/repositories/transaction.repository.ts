@@ -5,13 +5,14 @@
  * Provides a clear interface for transaction CRUD operations.
  */
 
-import { sql } from "./connection";
+import { sql } from "../connection";
 import {
   Transaction,
+  TransactionStatus,
   CreateTransactionRequest,
   ApplicationError,
   ErrorCode,
-} from "../types";
+} from "../../types";
 
 export const transactionRepository = {
   /**
@@ -19,6 +20,16 @@ export const transactionRepository = {
    * Always logs to shadow_logs first (before processing)
    */
   async create(request: CreateTransactionRequest): Promise<Transaction> {
+    return this.createWithStatus(request, "queued");
+  },
+
+  /**
+   * Create a transaction in a specific status
+   */
+  async createWithStatus(
+    request: CreateTransactionRequest,
+    status: TransactionStatus
+  ): Promise<Transaction> {
     try {
       const result = await sql`
         INSERT INTO transactions (
@@ -34,7 +45,7 @@ export const transactionRepository = {
           ${request.merchant_id},
           ${request.amount_cents},
           ${request.currency},
-          'pending'
+          ${status}
         )
         RETURNING *
       `;
@@ -135,11 +146,12 @@ export const transactionRepository = {
    */
   async updateStatus(
     id: string,
-    status: string,
+    status: TransactionStatus,
     updates?: {
       approved_by_user_id?: string;
       approval_timestamp?: Date;
       rejection_reason?: string;
+      failure_reason?: string;
     }
   ): Promise<Transaction | null> {
     try {
@@ -147,9 +159,10 @@ export const transactionRepository = {
         UPDATE transactions 
         SET 
           status = ${status},
-          approved_by_user_id = COALESCE(${updates?.approved_by_user_id}, approved_by_user_id),
-          approval_timestamp = COALESCE(${updates?.approval_timestamp}, approval_timestamp),
-          rejection_reason = COALESCE(${updates?.rejection_reason}, rejection_reason),
+          approved_by_user_id = COALESCE(${updates?.approved_by_user_id ?? null}, approved_by_user_id),
+          approval_timestamp = COALESCE(${updates?.approval_timestamp ?? null}, approval_timestamp),
+          rejection_reason = COALESCE(${updates?.rejection_reason ?? null}, rejection_reason),
+          failure_reason = COALESCE(${updates?.failure_reason ?? null}, failure_reason),
           updated_at = NOW()
         WHERE id = ${id}
         RETURNING *
@@ -195,7 +208,7 @@ export const transactionRepository = {
   /**
    * Helper to convert database row to Transaction type
    */
-  private rowToTransaction(row: any): Transaction {
+  rowToTransaction(row: any): Transaction {
     return {
       id: row.id,
       reference_id: row.reference_id,
@@ -210,6 +223,7 @@ export const transactionRepository = {
         ? new Date(row.approval_timestamp)
         : null,
       rejection_reason: row.rejection_reason,
+      failure_reason: row.failure_reason,
       created_at: new Date(row.created_at),
       updated_at: new Date(row.updated_at),
     };

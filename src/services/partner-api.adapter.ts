@@ -33,8 +33,14 @@ export const partnerApiAdapter = {
   async call(options: PartnerAPICallOptions): Promise<PartnerAPIResponse> {
     const partnerKey = process.env.PARTNER_API_KEY;
     const partnerUrl = process.env.PARTNER_API_URL;
+    const partnerMockUrl = process.env.PARTNER_API_MOCK_URL;
+    const partnerMode = (process.env.PARTNER_API_MODE || "mock").toLowerCase();
+    const baseUrl =
+      partnerMode === "mock"
+        ? partnerMockUrl || partnerUrl
+        : partnerUrl;
 
-    if (!partnerKey || !partnerUrl) {
+    if (!partnerKey || !baseUrl) {
       throw new ApplicationError(
         ErrorCode.INTERNAL_ERROR,
         "Partner API credentials not configured",
@@ -54,7 +60,7 @@ export const partnerApiAdapter = {
     try {
       // Step 2: Make the actual API call
       const response = await fetch(
-        `${partnerUrl}${options.endpoint}`,
+        `${baseUrl}${options.endpoint}`,
         {
           method: options.method,
           headers: {
@@ -69,7 +75,7 @@ export const partnerApiAdapter = {
         }
       );
 
-      const responsePayload = await response.json();
+      const responsePayload = (await response.json()) as Record<string, unknown>;
 
       // Step 3: Log response to shadow_logs
       await shadowLogRepository.updateWithResponse(shadowLog.id, {
@@ -98,7 +104,7 @@ export const partnerApiAdapter = {
       }
 
       await shadowLogRepository.updateWithResponse(shadowLog.id, {
-        response_payload: {},
+        response_payload: {} as Record<string, unknown>,
         response_status_code: 0,
         error_message: errorMessage,
       });

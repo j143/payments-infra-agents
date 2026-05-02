@@ -25,7 +25,7 @@ export const db = {
    * Execute a query and return single row
    */
   async queryOne<T>(
-    query: ReturnType<typeof sql>,
+    query: Promise<T[]>,
     errorMessage?: string
   ): Promise<T | null> {
     try {
@@ -41,7 +41,7 @@ export const db = {
    * Execute a query and return all rows
    */
   async queryMany<T>(
-    query: ReturnType<typeof sql>,
+    query: Promise<T[]>,
     errorMessage?: string
   ): Promise<T[]> {
     try {
@@ -56,7 +56,7 @@ export const db = {
    * Execute an insert and return the inserted row
    */
   async insert<T>(
-    query: ReturnType<typeof sql>,
+    query: Promise<T[]>,
     errorMessage?: string
   ): Promise<T> {
     try {
@@ -74,13 +74,10 @@ export const db = {
   /**
    * Execute an update and return the number of affected rows
    */
-  async update(
-    query: ReturnType<typeof sql>,
-    errorMessage?: string
-  ): Promise<number> {
+  async update(query: Promise<any>, errorMessage?: string): Promise<number> {
     try {
       const result = await query;
-      return result.count;
+      return result.count || 0;
     } catch (error) {
       console.error("Database update error:", errorMessage || error);
       throw error;
@@ -90,13 +87,10 @@ export const db = {
   /**
    * Execute a delete and return the number of affected rows
    */
-  async delete(
-    query: ReturnType<typeof sql>,
-    errorMessage?: string
-  ): Promise<number> {
+  async delete(query: Promise<any>, errorMessage?: string): Promise<number> {
     try {
       const result = await query;
-      return result.count;
+      return result.count || 0;
     } catch (error) {
       console.error("Database delete error:", errorMessage || error);
       throw error;
@@ -106,10 +100,8 @@ export const db = {
   /**
    * Acquire a transaction for multi-statement operations
    */
-  async transaction<T>(
-    callback: (tx: typeof sql) => Promise<T>
-  ): Promise<T> {
-    return sql.begin(callback);
+  async transaction<T>(callback: (tx: any) => Promise<T>): Promise<T> {
+    return (await sql.begin(callback as never)) as T;
   },
 };
 

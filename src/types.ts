@@ -12,6 +12,7 @@ import { z } from "zod";
 // ============================================
 
 export const TransactionStatusSchema = z.enum([
+  "queued",
   "pending",
   "requires_approval",
   "approved",
@@ -34,6 +35,7 @@ export const TransactionSchema = z.object({
   approved_by_user_id: z.string().uuid().nullable(),
   approval_timestamp: z.date().nullable(),
   rejection_reason: z.string().nullable(),
+  failure_reason: z.string().nullable(),
   created_at: z.date(),
   updated_at: z.date(),
 });
@@ -48,6 +50,49 @@ export const CreateTransactionRequestSchema = z.object({
 });
 export type CreateTransactionRequest = z.infer<
   typeof CreateTransactionRequestSchema
+>;
+
+// ============================================
+// Job Queue Domain (Async Processing)
+// ============================================
+
+export const JobQueueStatusSchema = z.enum([
+  "queued",
+  "processing",
+  "completed",
+  "failed",
+]);
+export type JobQueueStatus = z.infer<typeof JobQueueStatusSchema>;
+
+export const JobTypeSchema = z.enum(["process_transaction"]);
+export type JobType = z.infer<typeof JobTypeSchema>;
+
+export const JobQueueItemSchema = z.object({
+  id: z.string().uuid(),
+  transaction_id: z.string().uuid(),
+  job_type: JobTypeSchema,
+  status: JobQueueStatusSchema,
+  payload: z.record(z.any()),
+  attempts: z.number().int().nonnegative(),
+  max_attempts: z.number().int().positive(),
+  available_at: z.date(),
+  locked_at: z.date().nullable(),
+  locked_by: z.string().nullable(),
+  last_error: z.string().nullable(),
+  created_at: z.date(),
+  updated_at: z.date(),
+});
+export type JobQueueItem = z.infer<typeof JobQueueItemSchema>;
+
+export const CreateJobQueueItemRequestSchema = z.object({
+  transaction_id: z.string().uuid(),
+  job_type: JobTypeSchema,
+  payload: z.record(z.any()).default({}),
+  available_at: z.date().optional(),
+  max_attempts: z.number().int().positive().optional(),
+});
+export type CreateJobQueueItemRequest = z.infer<
+  typeof CreateJobQueueItemRequestSchema
 >;
 
 // ============================================

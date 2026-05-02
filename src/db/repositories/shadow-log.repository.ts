@@ -75,7 +75,7 @@ export const shadowLogRepository = {
         SET 
           response_payload = ${JSON.stringify(response.response_payload)},
           response_status_code = ${response.response_status_code},
-          error_message = ${response.error_message || null}
+          error_message = ${response.error_message ? response.error_message : null}
         WHERE id = ${id}
         RETURNING *
       `;
@@ -137,7 +137,7 @@ export const shadowLogRepository = {
   /**
    * Helper to convert database row to ShadowLog type
    */
-  private rowToShadowLog(row: any): ShadowLog {
+  rowToShadowLog(row: any): ShadowLog {
     return {
       id: row.id,
       transaction_id: row.transaction_id,

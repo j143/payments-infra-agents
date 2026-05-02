@@ -5,7 +5,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from "express";
-import { circuitBreakerService } from "../services/circuit-breaker.service";
+import { circuitBreakerService } from "../../services/circuit-breaker.service";
 
 const router = Router();
 

@@ -29,7 +29,7 @@ export const verificationTaskRepository = {
         ) VALUES (
           ${transactionId},
           'pending',
-          ${discrepancyType || null}
+          ${discrepancyType ?? null}
         )
         RETURNING *
       `;
@@ -150,7 +150,7 @@ export const verificationTaskRepository = {
         UPDATE verification_tasks 
         SET 
           status = 'verified',
-          notes = COALESCE(${notes}, notes),
+          notes = COALESCE(${notes ?? null}, notes),
           updated_at = NOW()
         WHERE id = ${id}
         RETURNING *
@@ -181,7 +181,7 @@ export const verificationTaskRepository = {
         SET 
           status = 'discrepancy_found',
           discrepancy_type = ${discrepancyType},
-          notes = COALESCE(${notes}, notes),
+          notes = COALESCE(${notes ?? null}, notes),
           updated_at = NOW()
         WHERE id = ${id}
         RETURNING *
@@ -222,7 +222,7 @@ export const verificationTaskRepository = {
   /**
    * Helper to convert database row to VerificationTask type
    */
-  private rowToVerificationTask(row: any): VerificationTask {
+  rowToVerificationTask(row: any): VerificationTask {
     return {
       id: row.id,
       transaction_id: row.transaction_id,
