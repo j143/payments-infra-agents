@@ -38,10 +38,10 @@ CREATE TABLE IF NOT EXISTS transactions (
   CONSTRAINT valid_amount CHECK (amount_cents > 0)
 );
 
-CREATE INDEX idx_transactions_account ON transactions(account_id);
-CREATE INDEX idx_transactions_status ON transactions(status);
-CREATE INDEX idx_transactions_requires_approval ON transactions(requires_approval);
-CREATE INDEX idx_transactions_created_at ON transactions(created_at);
+CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions(account_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_status ON transactions(status);
+CREATE INDEX IF NOT EXISTS idx_transactions_requires_approval ON transactions(requires_approval);
+CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at);
 
 -- Shadow Ledger (the "Black Box")
 -- Every partner API call is logged here BEFORE processing
@@ -69,9 +69,9 @@ CREATE TABLE IF NOT EXISTS shadow_logs (
   CONSTRAINT valid_retry_count CHECK (retry_count >= 0)
 );
 
-CREATE INDEX idx_shadow_logs_transaction ON shadow_logs(transaction_id);
-CREATE INDEX idx_shadow_logs_partner ON shadow_logs(partner_name);
-CREATE INDEX idx_shadow_logs_error ON shadow_logs(error_message) WHERE error_message IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_shadow_logs_transaction ON shadow_logs(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_shadow_logs_partner ON shadow_logs(partner_name);
+CREATE INDEX IF NOT EXISTS idx_shadow_logs_error ON shadow_logs(error_message) WHERE error_message IS NOT NULL;
 
 -- Verification Queue (Manual reconciliation)
 CREATE TABLE IF NOT EXISTS verification_tasks (
@@ -97,9 +97,9 @@ CREATE TABLE IF NOT EXISTS verification_tasks (
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_verification_tasks_transaction ON verification_tasks(transaction_id);
-CREATE INDEX idx_verification_tasks_status ON verification_tasks(status);
-CREATE INDEX idx_verification_tasks_assigned ON verification_tasks(assigned_to_user_id);
+CREATE INDEX IF NOT EXISTS idx_verification_tasks_transaction ON verification_tasks(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_verification_tasks_status ON verification_tasks(status);
+CREATE INDEX IF NOT EXISTS idx_verification_tasks_assigned ON verification_tasks(assigned_to_user_id);
 
 -- Accounts (simplified for Phase 1)
 CREATE TABLE IF NOT EXISTS accounts (
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS accounts (
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_accounts_merchant ON accounts(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_accounts_merchant ON accounts(merchant_id);
 
 -- Circuit Breaker (Fraud detection basics)
 -- Prevents duplicate payments to same vendor in short window
@@ -130,6 +130,6 @@ CREATE TABLE IF NOT EXISTS circuit_breaker_events (
   resolved_at TIMESTAMP
 );
 
-CREATE INDEX idx_circuit_breaker_vendor ON circuit_breaker_events(vendor_id);
-CREATE INDEX idx_circuit_breaker_resolved ON circuit_breaker_events(resolved_at) WHERE resolved_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_circuit_breaker_vendor ON circuit_breaker_events(vendor_id);
+CREATE INDEX IF NOT EXISTS idx_circuit_breaker_resolved ON circuit_breaker_events(resolved_at) WHERE resolved_at IS NULL;
 `;

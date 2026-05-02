@@ -19,9 +19,9 @@ CREATE TABLE IF NOT EXISTS job_queue (
   CONSTRAINT valid_max_attempts CHECK (max_attempts > 0)
 );
 
-CREATE INDEX idx_job_queue_status ON job_queue(status);
-CREATE INDEX idx_job_queue_available_at ON job_queue(available_at);
-CREATE INDEX idx_job_queue_transaction ON job_queue(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_job_queue_status ON job_queue(status);
+CREATE INDEX IF NOT EXISTS idx_job_queue_available_at ON job_queue(available_at);
+CREATE INDEX IF NOT EXISTS idx_job_queue_transaction ON job_queue(transaction_id);
 
 ALTER TABLE transactions
   ADD COLUMN IF NOT EXISTS failure_reason TEXT;

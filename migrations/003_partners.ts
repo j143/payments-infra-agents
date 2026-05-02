@@ -47,9 +47,9 @@ CREATE TABLE IF NOT EXISTS partners (
 );
 
 -- Indices for common queries
-CREATE INDEX idx_partners_status ON partners(status);
-CREATE INDEX idx_partners_entity_type ON partners(entity_type);
-CREATE INDEX idx_partners_internal_owner ON partners(internal_owner_user_id);
-CREATE INDEX idx_partners_last_health_check ON partners(last_health_check_at);
-CREATE INDEX idx_partners_consecutive_failures ON partners(consecutive_failures);
+CREATE INDEX IF NOT EXISTS idx_partners_status ON partners(status);
+CREATE INDEX IF NOT EXISTS idx_partners_entity_type ON partners(entity_type);
+CREATE INDEX IF NOT EXISTS idx_partners_internal_owner ON partners(internal_owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_partners_last_health_check ON partners(last_health_check_at);
+CREATE INDEX IF NOT EXISTS idx_partners_consecutive_failures ON partners(consecutive_failures);
 `;
