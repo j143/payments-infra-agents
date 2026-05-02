@@ -6,6 +6,8 @@
  */
 
 import Stripe from "stripe";
+import { transactionRepository } from "../../db/repositories/transaction.repository";
+import { shadowLogRepository } from "../../db/repositories/shadow-log.repository";
 
 const apiKey = process.env.STRIPE_API_KEY || "";
 const stripe = apiKey ? new Stripe(apiKey, { apiVersion: "2022-11-15" }) : null;
@@ -46,24 +48,81 @@ export async function retrievePayment(paymentIntentId: string) {
 }
 
 export async function handleWebhookEvent(event: Stripe.Event) {
-  // TODO: map Stripe events to internal domain events and persist to audit_trail
-  // This is a scaffold that should be expanded with transaction/ledger updates.
-  switch (event.type) {
-    case "payment_intent.succeeded":
-      // handle success
-      break;
-    case "payment_intent.payment_failed":
-      // handle failure
-      break;
-    case "charge.refunded":
-      // handle refunded
-      break;
-    default:
-      // noop for now
-      break;
+  // Map Stripe webhook events to internal transactions and shadow logs
+  const obj: any = (event.data && (event.data as any).object) || {};
+
+  // Try to locate internal transaction from metadata (we set transaction_id in metadata)
+  const transactionId = obj?.metadata?.transaction_id || obj?.metadata?.reference_id;
+
+  // If transaction exists, create a shadow log entry for this webhook
+  let shadow = null;
+  if (transactionId) {
+    try {
+      const tx = await transactionRepository.findById(transactionId);
+      if (tx) {
+        shadow = await shadowLogRepository.create({
+          transaction_id: tx.id,
+          partner_name: "stripe",
+          endpoint: "/webhooks/stripe",
+          http_method: "POST",
+          request_payload: event,
+        });
+      }
+    } catch (err) {
+      // ignore shadow logging errors to avoid blocking webhook processing
+    }
   }
 
-  return { handled: true, type: event.type };
+  try {
+    switch (event.type) {
+      case "payment_intent.succeeded": {
+        if (transactionId) {
+          await transactionRepository.updateStatus(transactionId, "completed");
+        }
+        break;
+      }
+      case "payment_intent.payment_failed": {
+        const reason = obj?.last_payment_error?.message || "payment_failed";
+        if (transactionId) {
+          await transactionRepository.updateStatus(transactionId, "failed", {
+            failure_reason: reason,
+          });
+        }
+        break;
+      }
+      case "charge.refunded": {
+        const reason = "refunded";
+        if (transactionId) {
+          await transactionRepository.updateStatus(transactionId, "failed", {
+            failure_reason: reason,
+          });
+        }
+        break;
+      }
+      default: {
+        // unsupported event type for now; noop
+        break;
+      }
+    }
+
+    if (shadow) {
+      await shadowLogRepository.updateWithResponse(shadow.id, {
+        response_payload: { handled: true, type: event.type },
+        response_status_code: 200,
+      });
+    }
+
+    return { handled: true, type: event.type };
+  } catch (err) {
+    if (shadow) {
+      await shadowLogRepository.updateWithResponse(shadow.id, {
+        response_payload: {},
+        response_status_code: 500,
+        error_message: err instanceof Error ? err.message : String(err),
+      });
+    }
+    throw err;
+  }
 }
 
 export default {
