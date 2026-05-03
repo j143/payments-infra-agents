@@ -9,6 +9,7 @@
  * - Errors are thrown when Stripe API key is missing
  */
 
+import "dotenv/config";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import * as stripeAdapter from "../../src/services/psp/stripe.adapter";
 import { transactionRepository } from "../../src/db/repositories/transaction.repository";
