@@ -123,27 +123,7 @@ jobs:
           DATABASE_URL: postgres://user:password@localhost:5432/payments_infra
           NODE_ENV: test
           PSP_PROVIDER: stripe
-        run: |
-          node -e "
-          const adapter = require('./dist/services/psp/stripe.adapter.js');
-          (async () => {
-            try {
-              const pi = await adapter.createPaymentIntent({
-                amount_cents: 1000,
-                currency: 'usd',
-                metadata: { test: 'github-actions', timestamp: new Date().toISOString() }
-              });
-              console.log('✅ PaymentIntent created:', pi.id);
-              console.log('✅ Amount:', pi.amount, pi.currency);
-              console.log('✅ Status:', pi.status);
-              console.log('✅ Stripe API Key configuration: SUCCESS');
-              process.exit(0);
-            } catch (err) {
-              console.error('❌ Error:', err.message);
-              process.exit(1);
-            }
-          })();
-          "
+        run: npx tsx -r dotenv/config scripts/test-stripe.ts
 
       - name: Verify Stripe configuration
         env:

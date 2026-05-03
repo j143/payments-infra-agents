@@ -9,8 +9,10 @@ import Stripe from "stripe";
 import { transactionRepository } from "../../db/repositories/transaction.repository";
 import { shadowLogRepository } from "../../db/repositories/shadow-log.repository";
 
-const apiKey = process.env.STRIPE_API_KEY || "";
-const stripe = apiKey ? new Stripe(apiKey, { apiVersion: "2022-11-15" }) : null;
+function getStripeClient() {
+  const apiKey = process.env.STRIPE_API_KEY || "";
+  return apiKey ? new Stripe(apiKey, { apiVersion: "2022-11-15" }) : null;
+}
 
 export async function createPaymentIntent(params: {
   amount_cents: number;
@@ -18,6 +20,7 @@ export async function createPaymentIntent(params: {
   metadata?: Record<string, string>;
   idempotencyKey?: string;
 }) {
+  const stripe = getStripeClient();
   if (!stripe) throw new Error("Stripe not configured (STRIPE_API_KEY missing)");
 
   const paymentIntent = await stripe.paymentIntents.create(
@@ -33,16 +36,19 @@ export async function createPaymentIntent(params: {
 }
 
 export async function capturePayment(paymentIntentId: string) {
+  const stripe = getStripeClient();
   if (!stripe) throw new Error("Stripe not configured (STRIPE_API_KEY missing)");
   return stripe.paymentIntents.capture(paymentIntentId);
 }
 
 export async function refundPayment(chargeId: string, amount_cents?: number) {
+  const stripe = getStripeClient();
   if (!stripe) throw new Error("Stripe not configured (STRIPE_API_KEY missing)");
   return stripe.refunds.create({ charge: chargeId, amount: amount_cents });
 }
 
 export async function retrievePayment(paymentIntentId: string) {
+  const stripe = getStripeClient();
   if (!stripe) throw new Error("Stripe not configured (STRIPE_API_KEY missing)");
   return stripe.paymentIntents.retrieve(paymentIntentId);
 }
