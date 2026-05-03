@@ -11,6 +11,7 @@ import { circuitBreakerRoutes } from "./routes/circuit-breaker";
 import { verificationTaskRoutes } from "./routes/verification-tasks";
 import { partnerRoutes } from "./routes/partners";
 import { auditTrailRoutes } from "./routes/audit-trail";
+import { stripeWebhookRoutes } from "./routes/webhooks/stripe";
 import { errorHandler } from "./middleware/error-handler";
 import { requestLogger } from "./middleware/request-logger";
 
@@ -32,6 +33,12 @@ app.use("/api", circuitBreakerRoutes);
 app.use("/api", verificationTaskRoutes);
 app.use("/api/partners", partnerRoutes);
 app.use("/api/audit-trail", auditTrailRoutes);
+// Webhooks: mount Stripe webhook receiver with raw body parsing for signature verification
+app.use(
+  "/api/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  stripeWebhookRoutes
+);
 
 // Error handling (must be last)
 app.use(errorHandler);

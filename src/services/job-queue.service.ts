@@ -8,6 +8,8 @@ import { ApplicationError, ErrorCode, JobQueueItem } from "../types";
 import { jobQueueRepository } from "../db/repositories/job-queue.repository";
 import { transactionRepository } from "../db/repositories/transaction.repository";
 import { partnerApiAdapter } from "./partner-api.adapter";
+import { shadowLogRepository } from "../db/repositories/shadow-log.repository";
+import * as stripeAdapter from "./psp/stripe.adapter";
 import { logger } from "../api/middleware/logger";
 import { buildSettlementOutcome } from "./settlement.service";
 
@@ -67,33 +69,84 @@ export const jobQueueService = {
 
     await transactionRepository.updateStatus(transaction.id, "processing");
 
+    // Support Stripe as first PSP integration if configured
+    const useStripe = (process.env.PSP_PROVIDER || "").toLowerCase() === "stripe" || transaction.merchant_id === "stripe";
+
     try {
-      const partnerResponse = await partnerApiAdapter.call({
-        transactionId: transaction.id,
-        partnerName: PARTNER_NAME,
-        endpoint: PARTNER_ENDPOINT,
-        method: "POST",
-        requestPayload: {
-          reference_id: transaction.reference_id,
-          account_id: transaction.account_id,
-          merchant_id: transaction.merchant_id,
+      if (useStripe) {
+        // Log request to shadow log
+        const shadow = await shadowLogRepository.create({
+          transaction_id: transaction.id,
+          partner_name: "stripe",
+          endpoint: "/v1/payment_intents",
+          http_method: "POST",
+          request_payload: {
+            reference_id: transaction.reference_id,
+            amount_cents: transaction.amount_cents,
+            currency: transaction.currency,
+          },
+        });
+
+        // Use transaction.reference_id as idempotency key
+        const idempotencyKey = transaction.reference_id;
+
+        const pi = await stripeAdapter.createPaymentIntent({
           amount_cents: transaction.amount_cents,
           currency: transaction.currency,
-        },
-      });
+          metadata: { transaction_id: transaction.id, reference_id: transaction.reference_id },
+          idempotencyKey,
+        });
 
-      await transactionRepository.updateStatus(transaction.id, "completed");
+        await shadowLogRepository.updateWithResponse(shadow.id, {
+          response_payload: pi as any,
+          response_status_code: 200,
+        });
 
-      const settlementOutcome = buildSettlementOutcome(transaction, {
-        partnerName: PARTNER_NAME,
-        partnerEndpoint: PARTNER_ENDPOINT,
-        partnerResponse,
-        transactionStatus: "completed",
-      });
+        // If payment intent requires capture or is succeeded, handle accordingly
+        if ((pi as any).status === "requires_capture") {
+          await stripeAdapter.capturePayment((pi as any).id);
+        }
 
-      logger.debug("Settlement outcome mapped", {
-        settlementOutcome,
-      });
+        await transactionRepository.updateStatus(transaction.id, "completed");
+
+        const settlementOutcome = buildSettlementOutcome(transaction, {
+          partnerName: "stripe",
+          partnerEndpoint: "/v1/payment_intents",
+          partnerResponse: { status: 200, payload: pi as unknown as Record<string, unknown> },
+          transactionStatus: "completed",
+        });
+
+        logger.debug("Settlement outcome mapped (stripe)", {
+          settlementOutcome,
+        });
+      } else {
+        const partnerResponse = await partnerApiAdapter.call({
+          transactionId: transaction.id,
+          partnerName: PARTNER_NAME,
+          endpoint: PARTNER_ENDPOINT,
+          method: "POST",
+          requestPayload: {
+            reference_id: transaction.reference_id,
+            account_id: transaction.account_id,
+            merchant_id: transaction.merchant_id,
+            amount_cents: transaction.amount_cents,
+            currency: transaction.currency,
+          },
+        });
+
+        await transactionRepository.updateStatus(transaction.id, "completed");
+
+        const settlementOutcome = buildSettlementOutcome(transaction, {
+          partnerName: PARTNER_NAME,
+          partnerEndpoint: PARTNER_ENDPOINT,
+          partnerResponse,
+          transactionStatus: "completed",
+        });
+
+        logger.debug("Settlement outcome mapped", {
+          settlementOutcome,
+        });
+      }
     } catch (error) {
       const failureReason =
         error instanceof Error ? error.message : "unknown error";
@@ -103,8 +156,8 @@ export const jobQueueService = {
       });
 
       const settlementOutcome = buildSettlementOutcome(transaction, {
-        partnerName: PARTNER_NAME,
-        partnerEndpoint: PARTNER_ENDPOINT,
+        partnerName: useStripe ? "stripe" : PARTNER_NAME,
+        partnerEndpoint: useStripe ? "/v1/payment_intents" : PARTNER_ENDPOINT,
         transactionStatus: "failed",
         failureReason,
       });
