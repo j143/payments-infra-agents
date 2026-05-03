@@ -17,9 +17,6 @@ jobs:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: password
           POSTGRES_DB: payments_infra
-          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
-          STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           
         ports:
           - 5432:5432
@@ -32,6 +29,9 @@ jobs:
     env:
       NODE_ENV: test
       DATABASE_URL: postgres://user:password@localhost:5432/payments_infra
+      STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+      STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
       PARTNER_API_MODE: mock
       PARTNER_API_MOCK_URL: http://localhost:8080
       JOB_POLL_INTERVAL_MS: 100
