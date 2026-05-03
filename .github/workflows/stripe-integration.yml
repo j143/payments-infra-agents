@@ -40,6 +40,7 @@ jobs:
 
       - name: Run Stripe adapter tests
         env:
+          DATABASE_URL: postgres://user:password@localhost:5432/payments_infra
           STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
           STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
           NODE_ENV: test
@@ -47,6 +48,7 @@ jobs:
 
       - name: Run Stripe webhook tests
         env:
+          DATABASE_URL: postgres://user:password@localhost:5432/payments_infra
           STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
@@ -55,6 +57,7 @@ jobs:
 
       - name: Run Stripe job-queue tests
         env:
+          DATABASE_URL: postgres://user:password@localhost:5432/payments_infra
           STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
           STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
           NODE_ENV: test
