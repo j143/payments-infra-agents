@@ -14,7 +14,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import * as stripeAdapter from "../../src/services/psp/stripe.adapter";
 import { transactionRepository } from "../../src/db/repositories/transaction.repository";
 import { shadowLogRepository } from "../../src/db/repositories/shadow-log.repository";
-import Stripe from "stripe";
+import type Stripe from "stripe";
 
 // Mock dependencies
 vi.mock("../../src/db/repositories/transaction.repository");
@@ -23,7 +23,11 @@ vi.mock("../../src/db/repositories/shadow-log.repository");
 describe("Stripe Adapter - createPaymentIntent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.STRIPE_API_KEY = process.env.STRIPE_API_KEY || "sk_test_demo";
+    if (!process.env.STRIPE_API_KEY) {
+      throw new Error(
+        "STRIPE_API_KEY is not set. Set STRIPE_API_KEY to a Stripe test key to run these tests."
+      );
+    }
   });
 
   it("EXPECT: creates PaymentIntent with correct amount, currency, and metadata", async () => {
@@ -63,7 +67,11 @@ describe("Stripe Adapter - createPaymentIntent", () => {
 describe("Stripe Adapter - capturePayment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.STRIPE_API_KEY = process.env.STRIPE_API_KEY || "sk_test_demo";
+    if (!process.env.STRIPE_API_KEY) {
+      throw new Error(
+        "STRIPE_API_KEY is not set. Set STRIPE_API_KEY to a Stripe test key to run these tests."
+      );
+    }
   });
 
   it("EXPECT: capture updates PaymentIntent status to succeeded", async () => {
@@ -92,7 +100,11 @@ describe("Stripe Adapter - capturePayment", () => {
 describe("Stripe Adapter - refundPayment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.STRIPE_API_KEY = process.env.STRIPE_API_KEY || "sk_test_demo";
+    if (!process.env.STRIPE_API_KEY) {
+      throw new Error(
+        "STRIPE_API_KEY is not set. Set STRIPE_API_KEY to a Stripe test key to run these tests."
+      );
+    }
   });
 
   it("EXPECT: refund returns Refund object with correct amount", async () => {
@@ -118,7 +130,11 @@ describe("Stripe Adapter - refundPayment", () => {
 describe("Stripe Adapter - handleWebhookEvent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.STRIPE_API_KEY = process.env.STRIPE_API_KEY || "sk_test_demo";
+    if (!process.env.STRIPE_API_KEY) {
+      throw new Error(
+        "STRIPE_API_KEY is not set. Set STRIPE_API_KEY to a Stripe test key to run these tests."
+      );
+    }
   });
 
   it("EXPECT: payment_intent.succeeded updates transaction status to completed", async () => {
@@ -257,7 +273,11 @@ describe("Stripe Adapter - handleWebhookEvent", () => {
 describe("Stripe Adapter - retrievePayment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.STRIPE_API_KEY = process.env.STRIPE_API_KEY || "sk_test_demo";
+    if (!process.env.STRIPE_API_KEY) {
+      throw new Error(
+        "STRIPE_API_KEY is not set. Set STRIPE_API_KEY to a Stripe test key to run these tests."
+      );
+    }
   });
 
   it("EXPECT: retrieves PaymentIntent by ID with all fields", async () => {

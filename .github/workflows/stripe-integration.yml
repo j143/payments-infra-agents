@@ -9,6 +9,10 @@ on:
 jobs:
   stripe-tests:
     runs-on: ubuntu-latest
+    env:
+      STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+      STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
     
     services:
       postgres:
@@ -29,6 +33,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Verify Stripe secrets
+        run: |
+          if [[ -z "${STRIPE_API_KEY}" ]]; then
+            echo "❌ STRIPE_API_KEY not set in workflow environment (check repository secrets)"
+            exit 1
+          fi
+          echo "✅ STRIPE_API_KEY is set"
 
       - uses: actions/setup-node@v4
         with:
